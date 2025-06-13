@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import styled from 'styled-components';
 import UserCard from './UserCard';
 import RepoCard from './RepoCard';
@@ -22,19 +22,14 @@ const Grid = styled.div`
   }
 `;
 
-const ResultItem = styled.div`
-  animation: fadeInUp 0.2s ease-out;
+const ResultItem = styled.div<{ delay: number }>`
+  animation: fadeInUp 0.3s ease-out;
   animation-fill-mode: both;
+  animation-delay: ${props => Math.min(props.delay * 0.05, 0.5)}s;
   width: 100%;
   min-width: 0;
-  
-  &:nth-child(1) { animation-delay: 0.1s; }
-  &:nth-child(2) { animation-delay: 0.2s; }
-  &:nth-child(3) { animation-delay: 0.3s; }
-  &:nth-child(4) { animation-delay: 0.4s; }
-  &:nth-child(5) { animation-delay: 0.5s; }
-  &:nth-child(6) { animation-delay: 0.6s; }
-  &:nth-child(n+7) { animation-delay: 0.7s; }
+  opacity: 0;
+  transform: translateY(30px);
   
   @keyframes fadeInUp {
     from {
@@ -46,6 +41,9 @@ const ResultItem = styled.div`
       transform: translateY(0);
     }
   }
+  
+  /* Минимальные оптимизации без блокировки фона */
+  will-change: opacity, transform;
 `;
 
 interface ResultsProps {
@@ -54,15 +52,18 @@ interface ResultsProps {
 }
 
 const Results: React.FC<ResultsProps> = ({ items, searchType }) => {
-  if (!items || items.length === 0) {
+  // Мемоизируем результаты для предотвращения ненужных перерендеров
+  const memoizedItems = useMemo(() => items, [items]);
+
+  if (!memoizedItems || memoizedItems.length === 0) {
     return null;
   }
 
   return (
     <ResultsContainer>
       <Grid>
-        {items.map((item, index) => (
-          <ResultItem key={item.id || index}>
+        {memoizedItems.map((item, index) => (
+          <ResultItem key={`${searchType}-${item.id || item.login || index}`} delay={index}>
             {searchType === 'user' ? (
               <UserCard user={item} />
             ) : (

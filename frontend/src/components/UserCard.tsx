@@ -19,7 +19,7 @@ const CardLink = styled.a`
 
 const Card = styled.div`
   background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(30px);
+  backdrop-filter: blur(5px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 24px;
   padding: 1.5rem;
@@ -32,8 +32,10 @@ const Card = styled.div`
   width: 100%;
   min-height: 80px;
   max-height: 120px;
-
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  
+  /* Минимальная оптимизация */
+  backface-visibility: hidden;
 
   &::before {
     content: '';
@@ -59,6 +61,10 @@ const Avatar = styled.img`
   border: 2px solid rgba(255, 255, 255, 0.2);
   transition: border-color 0.3s ease;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  flex-shrink: 0;
+  
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
   
   ${Card}:hover & {
     border-color: rgba(255, 255, 255, 0.3);

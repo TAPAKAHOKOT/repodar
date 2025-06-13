@@ -3,7 +3,7 @@ import styled from 'styled-components';
 
 const Container = styled.div`
   background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(20px);
+  backdrop-filter: blur(5px);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 28px;
   padding: 2rem;
@@ -90,7 +90,7 @@ const SelectWrapper = styled.div`
 `;
 
 const SelectInput = styled.select`
-  padding: 1rem 1.5rem;
+  padding: 1rem 2rem 1rem 1.5rem;
   font-size: 1.1rem;
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 20px;
@@ -123,7 +123,7 @@ const SelectInput = styled.select`
 
 const SelectIcon = styled.div`
   position: absolute;
-  right: 1rem;
+  right: 0.75rem;
   top: 50%;
   transform: translateY(-50%);
   pointer-events: none;

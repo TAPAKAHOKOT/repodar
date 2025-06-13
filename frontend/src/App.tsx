@@ -28,10 +28,23 @@ const GlobalStyle = createGlobalStyle`
     min-height: 100vh;
     color: #333;
     overflow-x: hidden;
+    
+    /* Оптимизации для прокрутки без блокировки Vanta.js */
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
   }
   
   #root {
     min-height: 100vh;
+    /* Убираем containment чтобы не блокировать Vanta.js */
+  }
+  
+  /* Оптимизации только для изображений */
+  img {
+    max-width: 100%;
+    height: auto;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
 `;
 
@@ -94,7 +107,7 @@ const Subtitle = styled.p`
 
 const MessageCard = styled.div`
   background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(20px);
+  backdrop-filter: blur(5px);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 24px;
   padding: 2rem;
