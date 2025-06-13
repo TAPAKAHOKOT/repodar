@@ -182,6 +182,9 @@ const LoadingSpinner = styled.div`
 `;
 
 function App() {
+  // API URL from environment variables
+  const API_URL = (window as any).ENV?.REACT_APP_BACKEND_URL || process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000';
+
   const [query, setQuery] = useState<string>('');
   const [type, setType] = useState<'user' | 'repo'>('user');
   const [results, setResults] = useState<Array<any>>([]);
@@ -244,7 +247,7 @@ function App() {
       }
       controllerRef.current = new AbortController();
       setLoading(true);
-      fetch('http://localhost:8000/api/search', {
+      fetch(`${API_URL}/api/search`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query: q, type: t }),
@@ -329,7 +332,7 @@ function App() {
     // Perform immediate search with new type
     controllerRef.current = new AbortController();
     setLoading(true);
-    fetch('http://localhost:8000/api/search', {
+    fetch(`${API_URL}/api/search`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ query: query, type: newType }),

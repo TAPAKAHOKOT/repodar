@@ -1,39 +1,35 @@
-version: '3'
 services:
   web:
     build: ./backend
-    container_name: web
+    container_name: "${COMPOSE_PROJECT_NAME:-repodar}-web"
     depends_on:
       - postgres
       - redis
-    environment:
-      - POSTGRES_HOST=postgres
-      - POSTGRES_DB=postgres
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - REDIS_URL=redis://redis:6379/1
-      # - GITHUB_TOKEN=<your_github_token>  # (Optional) GitHub API token for higher rate limits
+    env_file:
+      - .env
     ports:
-      - "8000:8000"
+      - "${BACKEND_PORT:-8000}:8000"
   frontend:
     build: ./frontend
-    container_name: frontend
+    container_name: "${COMPOSE_PROJECT_NAME:-repodar}-frontend"
     depends_on:
       - web
+    env_file:
+      - .env
     ports:
-      - "8080:80"
+      - "${FRONTEND_PORT:-8080}:80"
   postgres:
     image: postgres:13-alpine
-    container_name: postgres
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=postgres
+    container_name: "${COMPOSE_PROJECT_NAME:-repodar}-postgres"
+    env_file:
+      - .env
     volumes:
       - postgres_data:/var/lib/postgresql/data
   redis:
     image: redis:alpine
-    container_name: redis
+    container_name: "${COMPOSE_PROJECT_NAME:-repodar}-redis"
+    env_file:
+      - .env
     volumes:
       - redis_data:/data
 
