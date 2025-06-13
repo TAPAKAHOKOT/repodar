@@ -105,6 +105,11 @@ const SelectInput = styled.select`
   appearance: none;
   min-width: 140px;
   font-weight: 500;
+  width: 100%;
+  
+  @media (max-width: 768px) {
+    min-width: 160px;
+  }
   
   &:focus {
     outline: none;
