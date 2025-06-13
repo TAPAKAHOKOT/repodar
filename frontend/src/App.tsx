@@ -1,22 +1,171 @@
 import React, { useState, useRef, useEffect } from 'react';
-import styled from 'styled-components';
+import styled, { createGlobalStyle } from 'styled-components';
 import debounce from 'lodash/debounce';
 import SearchBar from './components/SearchBar';
 import Results from './components/Results';
 
+declare global {
+  interface Window {
+    VANTA: any;
+    THREE: any;
+  }
+}
+
+const GlobalStyle = createGlobalStyle`
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+      'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+      sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background: #000000;
+    min-height: 100vh;
+    color: #333;
+    overflow-x: hidden;
+  }
+  
+  #root {
+    min-height: 100vh;
+  }
+`;
+
+const AppWrapper = styled.div`
+  min-height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+`;
+
+const ContentWrapper = styled.div`
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  overflow-y: auto;
+`;
+
 const Container = styled.div`
-  max-width: 800px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 1rem;
+  padding: 2rem;
+  position: relative;
+  z-index: 2;
+  
+  @media (max-width: 768px) {
+    padding: 1rem;
+  }
+`;
+
+const Header = styled.header`
+  text-align: center;
+  margin-bottom: 3rem;
+`;
+
+const Title = styled.h1`
+  font-size: 3.5rem;
+  font-weight: 800;
+  color: white;
+  text-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  margin-bottom: 1rem;
+  background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  
+  @media (max-width: 768px) {
+    font-size: 2.5rem;
+  }
+`;
+
+const Subtitle = styled.p`
+  font-size: 1.2rem;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 300;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+`;
+
+const MessageCard = styled.div`
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 24px;
+  padding: 2rem;
+  text-align: center;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  margin: 2rem 0;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+    box-shadow: 
+      0 12px 40px rgba(0, 0, 0, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  }
 `;
 
 const Message = styled.p`
-  font-size: 1rem;
+  font-size: 1.1rem;
+  color: #2d3748;
+  line-height: 1.6;
+  font-weight: 500;
+`;
+
+const ErrorCard = styled(MessageCard)`
+  background: rgba(255, 107, 107, 0.15);
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  
+  &:hover {
+    background: rgba(255, 107, 107, 0.2);
+  }
 `;
 
 const ErrorText = styled.p`
-  color: red;
-  font-weight: bold;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #c53030;
+`;
+
+const LoadingCard = styled(MessageCard)`
+  background: rgba(78, 205, 196, 0.15);
+  border: 1px solid rgba(78, 205, 196, 0.3);
+  
+  &:hover {
+    background: rgba(78, 205, 196, 0.2);
+  }
+`;
+
+const LoadingText = styled.p`
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2d3748;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+`;
+
+const LoadingSpinner = styled.div`
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
 `;
 
 function App() {
@@ -31,6 +180,47 @@ function App() {
   const latestType = useRef<string>(type);
   // Ref to store current fetch AbortController
   const controllerRef = useRef<AbortController | null>(null);
+  
+  // Ref for Vanta.js background element
+  const vantaRef = useRef<HTMLDivElement>(null);
+  const vantaEffect = useRef<any>(null);
+  
+  // Initialize Vanta.js effect
+  useEffect(() => {
+    if (vantaRef.current && window.VANTA) {
+      vantaEffect.current = window.VANTA.FOG({
+        el: vantaRef.current,
+        mouseControls: true,
+        touchControls: true,
+        gyroControls: false,
+        minHeight: window.innerHeight,
+        minWidth: window.innerWidth,
+        highlightColor: 0xffc300,
+        midtoneColor: 0xff1f00,
+        lowlightColor: 0x2d00ff,
+        baseColor: 0xffebeb,
+        blurFactor: 0.6,
+        speed: 1,
+        zoom: 0.7
+      });
+    }
+    
+    // Handle window resize only
+    const handleResize = () => {
+      if (vantaEffect.current && vantaEffect.current.resize) {
+        vantaEffect.current.resize();
+      }
+    };
+    
+    window.addEventListener('resize', handleResize);
+    
+    return () => {
+      if (vantaEffect.current) {
+        vantaEffect.current.destroy();
+      }
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
 
   // Debounced search function
   const searchDebounced = useRef(
@@ -111,6 +301,8 @@ function App() {
     setType(newType);
     latestType.current = newType;
     setError(null);
+    // Clear results when switching type with short query
+    setResults([]);
     if (query.length < 3) {
       // If current query is not long enough, do nothing
       return;
@@ -122,8 +314,6 @@ function App() {
       controllerRef.current = null;
     }
     // Perform immediate search with new type
-    // (Reuse the debounced function without delay by calling performSearch directly)
-    // We can call the debounced function and then flush immediately, but simpler is to just call searchDebounced without delay
     controllerRef.current = new AbortController();
     setLoading(true);
     fetch('http://localhost:8000/api/search', {
@@ -161,19 +351,54 @@ function App() {
   };
 
   return (
-    <Container>
-      <h1>GitHub Search</h1>
-      <SearchBar query={query} type={type} onQueryChange={handleQueryChange} onTypeChange={handleTypeChange} />
-      {error && <ErrorText>Error: {error}</ErrorText>}
-      {!error && query.length < 3 && (
-        <Message>Enter at least 3 characters to search.</Message>
-      )}
-      {!error && query.length >= 3 && !loading && results.length === 0 && (
-        <Message>No results found for "{query}".</Message>
-      )}
-      {loading && <Message>Loading results...</Message>}
-      <Results items={results} searchType={type} />
-    </Container>
+    <>
+      <AppWrapper ref={vantaRef} />
+      <ContentWrapper>
+        <GlobalStyle />
+        <Container>
+          <Header>
+            <Title>GitHub Search</Title>
+            <Subtitle>Найдите пользователей и репозитории GitHub</Subtitle>
+          </Header>
+          
+          <SearchBar 
+            query={query} 
+            type={type} 
+            onQueryChange={handleQueryChange} 
+            onTypeChange={handleTypeChange} 
+          />
+          
+          {error && (
+            <ErrorCard>
+              <ErrorText>Ошибка: {error}</ErrorText>
+            </ErrorCard>
+          )}
+          
+          {!error && query.length < 3 && (
+            <MessageCard>
+              <Message>Введите минимум 3 символа для поиска</Message>
+            </MessageCard>
+          )}
+          
+          {!error && query.length >= 3 && !loading && results.length === 0 && (
+            <MessageCard>
+              <Message>Результаты не найдены для "{query}"</Message>
+            </MessageCard>
+          )}
+          
+          {loading && (
+            <LoadingCard>
+              <LoadingText>
+                <LoadingSpinner />
+                Загрузка результатов...
+              </LoadingText>
+            </LoadingCard>
+          )}
+          
+          <Results items={results} searchType={type} />
+        </Container>
+      </ContentWrapper>
+    </>
   );
 }
 
