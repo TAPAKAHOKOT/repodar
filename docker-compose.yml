@@ -1,0 +1,42 @@
+version: '3'
+services:
+  web:
+    build: ./backend
+    container_name: web
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - REDIS_URL=redis://redis:6379/1
+      # - GITHUB_TOKEN=<your_github_token>  # (Optional) GitHub API token for higher rate limits
+    ports:
+      - "8000:8000"
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    depends_on:
+      - web
+    ports:
+      - "8080:80"
+  postgres:
+    image: postgres:13-alpine
+    container_name: postgres
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+  redis:
+    image: redis:alpine
+    container_name: redis
+    volumes:
+      - redis_data:/data
+
+volumes:
+  postgres_data:
+  redis_data:
