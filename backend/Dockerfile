@@ -24,7 +24,7 @@ COPY . .
 RUN python manage.py collectstatic --no-input
 
 # Expose port
-EXPOSE 8000
+EXPOSE $BACKEND_PORT
 
 # Start the server using gunicorn
-CMD ["gunicorn", "repodar.wsgi:application", "--bind", "0.0.0.0:8000"]
+CMD ["sh", "-c", "gunicorn repodar.wsgi:application --bind 0.0.0.0:$BACKEND_PORT"]

@@ -1,0 +1,25 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    steps:
+    - name: Deploying
+      uses: appleboy/ssh-action@master
+      with:
+        host: 185.215.180.137
+        username: root
+        key: ${{ secrets.SECRET_KEY }}
+        port: 22
+        script: |
+          cd /root/repodar
+          git pull
+          docker compose build
+          docker compose down || true
+          docker compose up -d

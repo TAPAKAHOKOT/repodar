@@ -1,7 +1,7 @@
 services:
-  web:
+  backend:
     build: ./backend
-    container_name: "${COMPOSE_PROJECT_NAME:-repodar}-web"
+    container_name: "${COMPOSE_PROJECT_NAME:-repodar}-backend"
     depends_on:
       - postgres
       - redis
@@ -13,7 +13,7 @@ services:
     build: ./frontend
     container_name: "${COMPOSE_PROJECT_NAME:-repodar}-frontend"
     depends_on:
-      - web
+      - backend
     env_file:
       - .env
     ports:
