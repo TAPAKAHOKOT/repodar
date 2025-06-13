@@ -18,7 +18,7 @@ const CardLink = styled.a`
 `;
 
 const Card = styled.div`
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
   backdrop-filter: blur(5px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 24px;
@@ -49,7 +49,7 @@ const Card = styled.div`
   }
   
   &:hover {
-    background: rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.2);
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
   }
 `;
