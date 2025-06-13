@@ -35,6 +35,22 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'repodar.urls'
 
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]
+
 WSGI_APPLICATION = 'repodar.wsgi.application'
 
 DATABASES = {
@@ -71,3 +87,6 @@ STATIC_ROOT = BASE_DIR / 'static'
 CORS_ORIGIN_ALLOW_ALL = True
 
 # Django Rest Framework can stay with default settings for now
+
+# Default primary key field type
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
