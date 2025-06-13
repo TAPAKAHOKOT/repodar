@@ -23,8 +23,5 @@ COPY . .
 # Collect static files (for Swagger UI etc)
 RUN python manage.py collectstatic --no-input
 
-# Expose port
-EXPOSE $BACKEND_PORT
-
 # Start the server using gunicorn
-CMD ["sh", "-c", "gunicorn repodar.wsgi:application --bind 0.0.0.0:$BACKEND_PORT"]
+CMD ["sh", "-c", "gunicorn repodar.wsgi:application --bind 0.0.0.0:8000"]
