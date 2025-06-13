@@ -183,7 +183,7 @@ const LoadingSpinner = styled.div`
 
 function App() {
   // API URL from environment variables
-  const API_URL = (window as any).ENV?.REACT_APP_BACKEND_API_URL || process.env.REACT_APP_BACKEND_API_URL || 'http://localhost:8000/api';
+  const API_URL = ((window as any).ENV?.BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:8000') + '/api';
 
   const [query, setQuery] = useState<string>('');
   const [type, setType] = useState<'user' | 'repo'>('user');

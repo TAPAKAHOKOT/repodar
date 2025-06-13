@@ -1,7 +1,10 @@
 import os
 from pathlib import Path
+from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+load_dotenv(BASE_DIR.parent / '.env')
 
 SECRET_KEY = 'django-insecure-please-change'
 DEBUG = False
@@ -85,6 +88,17 @@ STATIC_ROOT = BASE_DIR / 'static'
 
 # CORS settings
 CORS_ORIGIN_ALLOW_ALL = True
+
+# Swagger settings
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'basic': {
+            'type': 'basic'
+        }
+    },
+    'DEFAULT_INFO': 'repodar.urls.openapi_info',
+    'USE_SESSION_AUTH': False,
+}
 
 # Django Rest Framework can stay with default settings for now
 
