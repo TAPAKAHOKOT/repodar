@@ -59,11 +59,20 @@ const Results: React.FC<ResultsProps> = ({ items, searchType }) => {
     return null;
   }
 
+  // Функция для генерации уникального ключа в зависимости от типа поиска
+  const generateKey = (item: any, index: number) => {
+    if (searchType === 'user') {
+      return `user-${item.id || item.login || index}`;
+    } else {
+      return `repo-${item.id || item.full_name || index}`;
+    }
+  };
+
   return (
     <ResultsContainer>
       <Grid>
         {memoizedItems.map((item, index) => (
-          <ResultItem key={`${searchType}-${item.id || item.login || index}`} delay={index}>
+          <ResultItem key={generateKey(item, index)} delay={index}>
             {searchType === 'user' ? (
               <UserCard user={item} />
             ) : (

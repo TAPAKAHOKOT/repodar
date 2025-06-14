@@ -31,22 +31,11 @@ const Card = styled.div`
   position: relative;
   width: 100%;
   min-height: 80px;
-  max-height: 120px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
   
-  /* Минимальная оптимизация */
-  backface-visibility: hidden;
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.01) 100%);
-    pointer-events: none;
-  }
+  /* Оптимизация для производительности */
+  will-change: background, box-shadow;
+  contain: layout style;
   
   &:hover {
     background: rgba(255, 255, 255, 0.2);
@@ -63,8 +52,8 @@ const Avatar = styled.img`
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
   flex-shrink: 0;
   
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: crisp-edges;
+  /* Оптимизация загрузки изображений */
+  loading: lazy;
   
   ${Card}:hover & {
     border-color: rgba(255, 255, 255, 0.3);
@@ -117,7 +106,7 @@ const UserCard: React.FC<UserCardProps> = ({ user }) => {
   return (
     <CardLink href={profileUrl} target="_blank" rel="noopener noreferrer">
       <Card>
-        <Avatar src={user.avatar_url} alt={user.login} />
+        <Avatar src={user.avatar_url} alt={user.login} loading="lazy" />
         <UserInfo>
           <UserName>@{user.login}</UserName>
           {user.location && (

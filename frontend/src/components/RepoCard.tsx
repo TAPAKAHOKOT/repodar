@@ -38,23 +38,12 @@ const Card = styled.div`
     box-shadow 0.2s ease-in-out;
   position: relative;
   min-height: 120px;
-  max-height: 200px;
   width: 100%;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
   
-  /* Минимальная оптимизация */
-  backface-visibility: hidden;
-  
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.01) 100%);
-    pointer-events: none;
-  }
+  /* Оптимизация для производительности */
+  will-change: background, box-shadow;
+  contain: layout style;
   
   &:hover {
     background: rgba(255, 255, 255, 0.2);
@@ -71,8 +60,8 @@ const Avatar = styled.img`
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
   flex-shrink: 0;
   
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: crisp-edges;
+  /* Оптимизация загрузки изображений */
+  loading: lazy;
   
   ${Card}:hover & {
     border-color: rgba(255, 255, 255, 0.3);
@@ -126,7 +115,6 @@ const StarCount = styled.div`
   align-items: center;
   gap: 0.25rem;
   background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   padding: 0.25rem 0.5rem;
   border-radius: 16px;
@@ -144,7 +132,6 @@ const Language = styled.div`
   align-items: center;
   gap: 0.25rem;
   background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   padding: 0.25rem 0.5rem;
   border-radius: 16px;
@@ -175,7 +162,7 @@ const RepoCard: React.FC<RepoCardProps> = ({ repo }) => {
   return (
     <CardLink href={repoUrl} target="_blank" rel="noopener noreferrer">
       <Card>
-        <Avatar src={repo.owner.avatar_url} alt={repo.owner.login} />
+        <Avatar src={repo.owner.avatar_url} alt={repo.owner.login} loading="lazy" />
         <RepoInfo>
           <RepoName>{repo.full_name}</RepoName>
           {repo.description && (

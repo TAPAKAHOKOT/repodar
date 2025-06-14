@@ -207,6 +207,8 @@ function App() {
   const latestType = useRef<string>(type);
   // Ref to store current fetch AbortController
   const controllerRef = useRef<AbortController | null>(null);
+  // Отдельный AbortController для загрузки следующих страниц
+  const loadMoreControllerRef = useRef<AbortController | null>(null);
   
   // Ref for Vanta.js background element
   const vantaRef = useRef<HTMLDivElement>(null);
@@ -249,7 +251,7 @@ function App() {
     };
   }, []);
 
-  // Infinite scroll handler
+  // Infinite scroll handler с оптимизированными зависимостями
   useEffect(() => {
     const handleScroll = () => {
       if (loadingMore || !hasMore || query.length < 3) return;
@@ -266,21 +268,26 @@ function App() {
 
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [loadingMore, hasMore, query, page, type]);
+  }, [loadingMore, hasMore, query.length]); // Убираем page и type из зависимостей
 
-  // Function to load next page
+  // Function to load next page с улучшенным управлением состоянием
   const loadNextPage = () => {
     if (loadingMore || !hasMore) return;
+    
+    // Отменяем предыдущий запрос загрузки дополнительных страниц если он еще выполняется
+    if (loadMoreControllerRef.current) {
+      loadMoreControllerRef.current.abort();
+    }
     
     setLoadingMore(true);
     const nextPage = page + 1;
     
-    const controller = new AbortController();
+    loadMoreControllerRef.current = new AbortController();
     fetch(`${API_URL}/search`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ query: query, type: type, page: nextPage }),
-      signal: controller.signal
+      signal: loadMoreControllerRef.current.signal
     })
       .then(response => {
         if (!response.ok) {
@@ -292,22 +299,27 @@ function App() {
         return response.json();
       })
       .then(data => {
+        // Проверяем что запрос еще актуален
         if (query === latestQuery.current && type === latestType.current) {
           setResults(prevResults => [...prevResults, ...data.items]);
           setPage(nextPage);
           setHasMore(data.has_more);
           setError(null);
         }
-        setLoadingMore(false);
       })
       .catch(err => {
         if (err.name === 'AbortError') {
           return;
         }
+        // Только устанавливаем ошибку если запрос еще актуален
         if (query === latestQuery.current && type === latestType.current) {
           setError(err.message || 'Failed to load more results.');
         }
+      })
+      .finally(() => {
+        // Всегда сбрасываем состояние загрузки
         setLoadingMore(false);
+        loadMoreControllerRef.current = null;
       });
   };
 
@@ -369,6 +381,9 @@ function App() {
       if (controllerRef.current) {
         controllerRef.current.abort();
       }
+      if (loadMoreControllerRef.current) {
+        loadMoreControllerRef.current.abort();
+      }
     };
   }, [searchDebounced]);
 
@@ -385,11 +400,22 @@ function App() {
         controllerRef.current.abort();
         controllerRef.current = null;
       }
+      // Также отменяем загрузку дополнительных страниц
+      if (loadMoreControllerRef.current) {
+        loadMoreControllerRef.current.abort();
+        loadMoreControllerRef.current = null;
+      }
       setLoading(false);
       setLoadingMore(false);
       setResults([]);
       return;
     }
+    // Отменяем загрузку дополнительных страниц при новом поиске
+    if (loadMoreControllerRef.current) {
+      loadMoreControllerRef.current.abort();
+      loadMoreControllerRef.current = null;
+    }
+    setLoadingMore(false);
     // Trigger debounced search for valid query length
     searchDebounced(newQuery, type);
   };
@@ -412,6 +438,12 @@ function App() {
       controllerRef.current.abort();
       controllerRef.current = null;
     }
+    // Также отменяем загрузку дополнительных страниц
+    if (loadMoreControllerRef.current) {
+      loadMoreControllerRef.current.abort();
+      loadMoreControllerRef.current = null;
+    }
+    setLoadingMore(false);
     // Perform immediate search with new type
     controllerRef.current = new AbortController();
     setLoading(true);
