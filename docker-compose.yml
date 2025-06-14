@@ -13,7 +13,7 @@ services:
     build: 
       context: ./frontend
       args:
-        BACKEND_URL: "${BACKEND_URL:-http://localhost:8000}"
+        REACT_APP_BACKEND_URL: "${BACKEND_URL:-http://localhost:8000}"
     container_name: "${COMPOSE_PROJECT_NAME:-repodar}-frontend"
     depends_on:
       - backend

@@ -181,15 +181,26 @@ const LoadingSpinner = styled.div`
   }
 `;
 
+const LoadMoreCard = styled(LoadingCard)`
+  margin-top: 1rem;
+  padding: 1rem;
+`;
+
+const LoadMoreText = styled(LoadingText)`
+  font-size: 1rem;
+`;
+
 function App() {
   // API URL from environment variables
-  const API_URL = ((window as any).ENV?.BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:8000') + '/api';
-
+  const API_URL = ((window as any).ENV?.REACT_APP_BACKEND_URL || process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000') + '/api';
   const [query, setQuery] = useState<string>('');
   const [type, setType] = useState<'user' | 'repo'>('user');
   const [results, setResults] = useState<Array<any>>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [loadingMore, setLoadingMore] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState<number>(1);
+  const [hasMore, setHasMore] = useState<boolean>(false);
 
   // Refs to track latest query/type for comparison in async calls
   const latestQuery = useRef<string>(query);
@@ -238,6 +249,68 @@ function App() {
     };
   }, []);
 
+  // Infinite scroll handler
+  useEffect(() => {
+    const handleScroll = () => {
+      if (loadingMore || !hasMore || query.length < 3) return;
+      
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+      
+      // Загружаем следующую страницу когда пользователь прокрутил до 80% от конца
+      if (scrollTop + windowHeight >= documentHeight * 0.8) {
+        loadNextPage();
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [loadingMore, hasMore, query, page, type]);
+
+  // Function to load next page
+  const loadNextPage = () => {
+    if (loadingMore || !hasMore) return;
+    
+    setLoadingMore(true);
+    const nextPage = page + 1;
+    
+    const controller = new AbortController();
+    fetch(`${API_URL}/search`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: query, type: type, page: nextPage }),
+      signal: controller.signal
+    })
+      .then(response => {
+        if (!response.ok) {
+          return response.json().then(errData => {
+            const errMsg = errData.error || `Error ${response.status}`;
+            throw new Error(errMsg);
+          });
+        }
+        return response.json();
+      })
+      .then(data => {
+        if (query === latestQuery.current && type === latestType.current) {
+          setResults(prevResults => [...prevResults, ...data.items]);
+          setPage(nextPage);
+          setHasMore(data.has_more);
+          setError(null);
+        }
+        setLoadingMore(false);
+      })
+      .catch(err => {
+        if (err.name === 'AbortError') {
+          return;
+        }
+        if (query === latestQuery.current && type === latestType.current) {
+          setError(err.message || 'Failed to load more results.');
+        }
+        setLoadingMore(false);
+      });
+  };
+
   // Debounced search function
   const searchDebounced = useRef(
     debounce((q: string, t: string) => {
@@ -247,10 +320,11 @@ function App() {
       }
       controllerRef.current = new AbortController();
       setLoading(true);
+      setPage(1); // Reset to first page for new search
       fetch(`${API_URL}/search`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: q, type: t }),
+        body: JSON.stringify({ query: q, type: t, page: 1 }),
         signal: controllerRef.current.signal
       })
         .then(response => {
@@ -265,7 +339,9 @@ function App() {
         })
         .then(data => {
           if (q === latestQuery.current && t === latestType.current) {
-            setResults(data);
+            setResults(data.items);
+            setPage(data.page);
+            setHasMore(data.has_more);
             setError(null);
             setLoading(false);
           }
@@ -278,6 +354,8 @@ function App() {
           if (q === latestQuery.current && t === latestType.current) {
             setError(err.message || 'Failed to fetch results.');
             setResults([]);
+            setPage(1);
+            setHasMore(false);
             setLoading(false);
           }
         });
@@ -298,6 +376,8 @@ function App() {
     setQuery(newQuery);
     latestQuery.current = newQuery;
     setError(null);
+    setPage(1);
+    setHasMore(false);
     if (newQuery.length < 3) {
       // If query too short, cancel any pending/ongoing search
       searchDebounced.cancel();
@@ -306,6 +386,7 @@ function App() {
         controllerRef.current = null;
       }
       setLoading(false);
+      setLoadingMore(false);
       setResults([]);
       return;
     }
@@ -317,6 +398,8 @@ function App() {
     setType(newType);
     latestType.current = newType;
     setError(null);
+    setPage(1);
+    setHasMore(false);
     // Clear results when switching type with short query
     setResults([]);
     if (query.length < 3) {
@@ -335,7 +418,7 @@ function App() {
     fetch(`${API_URL}/search`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query: query, type: newType }),
+      body: JSON.stringify({ query: query, type: newType, page: 1 }),
       signal: controllerRef.current.signal
     })
       .then(response => {
@@ -349,7 +432,9 @@ function App() {
       })
       .then(data => {
         if (query === latestQuery.current && newType === latestType.current) {
-          setResults(data);
+          setResults(data.items);
+          setPage(data.page);
+          setHasMore(data.has_more);
           setError(null);
         }
         setLoading(false);
@@ -361,6 +446,8 @@ function App() {
         if (query === latestQuery.current && newType === latestType.current) {
           setError(err.message || 'Failed to fetch results.');
           setResults([]);
+          setPage(1);
+          setHasMore(false);
         }
         setLoading(false);
       });
@@ -412,6 +499,15 @@ function App() {
           )}
           
           <Results items={results} searchType={type} />
+          
+          {loadingMore && (
+            <LoadMoreCard>
+              <LoadMoreText>
+                <LoadingSpinner />
+                Загрузка дополнительных результатов...
+              </LoadMoreText>
+            </LoadMoreCard>
+          )}
         </Container>
       </ContentWrapper>
     </>
