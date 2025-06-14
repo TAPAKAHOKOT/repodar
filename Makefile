@@ -9,4 +9,4 @@ build:
 	docker compose build
 
 test:
-	docker compose --profile service run --rm backend-service python manage.py test --verbosity 2
+	docker compose --profile service run --rm backend-service python manage.py test

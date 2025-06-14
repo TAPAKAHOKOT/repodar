@@ -6,7 +6,7 @@ from unittest.mock import patch
 @override_settings(CACHES={'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}})
 class SearchAPITest(APITestCase):
     def setUp(self):
-        # Ensure cache is clear before each test
+        # Очистка кеша перед каждым тестом
         cache.clear()
 
     def test_search_caching(self):
@@ -18,12 +18,13 @@ class SearchAPITest(APITestCase):
             "has_more": True
         }
         with patch('repodar.search.views.search_github', return_value=dummy_results) as mock_search:
-            # First call - should call search_github and return results
+            # Первый вызов - должен вызвать search_github и вернуть результаты
             response = self.client.post('/api/search', {"query": "testquery", "type": "user"}, format='json')
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.json(), dummy_results)
             mock_search.assert_called_once()
-            # Second call with same parameters - should use cache (no new calls)
+
+            # Второй вызов с теми же параметрами - должен использовать кеш (без новых вызовов)
             response2 = self.client.post('/api/search', {"query": "testquery", "type": "user"}, format='json')
             self.assertEqual(response2.status_code, 200)
             self.assertEqual(response2.json(), dummy_results)
@@ -45,17 +46,17 @@ class SearchAPITest(APITestCase):
             "has_more": True
         }
         with patch('repodar.search.views.search_github', side_effect=[dummy_results_page1, dummy_results_page2]) as mock_search:
-            # First page
+            # Первая страница
             response1 = self.client.post('/api/search', {"query": "test", "type": "user", "page": 1}, format='json')
             self.assertEqual(response1.status_code, 200)
             self.assertEqual(response1.json(), dummy_results_page1)
             
-            # Second page
+            # Вторая страница
             response2 = self.client.post('/api/search', {"query": "test", "type": "user", "page": 2}, format='json')
             self.assertEqual(response2.status_code, 200)
             self.assertEqual(response2.json(), dummy_results_page2)
             
-            # Should have called search_github twice with different pages
+            # Должен был вызвать search_github дважды с разными страницами
             self.assertEqual(mock_search.call_count, 2)
 
     def test_clear_cache(self):
@@ -67,14 +68,16 @@ class SearchAPITest(APITestCase):
             "has_more": True
         }
         with patch('repodar.search.views.search_github', return_value=dummy_results) as mock_search:
-            # Initial search to populate cache
+            # Первый вызов для заполнения кеша
             response1 = self.client.post('/api/search', {"query": "abc", "type": "user"}, format='json')
             self.assertEqual(response1.status_code, 200)
             self.assertEqual(mock_search.call_count, 1)
-            # Clear the cache
+
+            # Очистка кеша
             response_clear = self.client.post('/api/clear-cache', format='json')
             self.assertEqual(response_clear.status_code, 200)
-            # Search again after clearing cache - should call search_github again
+
+            # Поиск снова после очистки кеша - должен вызвать search_github снова
             response2 = self.client.post('/api/search', {"query": "abc", "type": "user"}, format='json')
             self.assertEqual(response2.status_code, 200)
             self.assertEqual(mock_search.call_count, 2)
@@ -82,6 +85,7 @@ class SearchAPITest(APITestCase):
     def test_query_too_short(self):
         with patch('repodar.search.views.search_github') as mock_search:
             response = self.client.post('/api/search', {"query": "ab", "type": "user"}, format='json')
-            # Expect a 400 Bad Request for too short query
+            
+            # Ожидается 400 Bad Request для слишком короткого запроса
             self.assertEqual(response.status_code, 400)
             mock_search.assert_not_called()
