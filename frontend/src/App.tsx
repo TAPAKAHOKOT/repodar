@@ -190,6 +190,43 @@ const LoadMoreText = styled(LoadingText)`
   font-size: 1rem;
 `;
 
+const LoadMoreErrorCard = styled(ErrorCard)`
+  margin-top: 1rem;
+  padding: 1rem;
+`;
+
+const LoadMoreErrorText = styled(ErrorText)`
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+`;
+
+const LoadMoreBlockedText = styled(LoadMoreErrorText)`
+  font-size: 0.9rem;
+  margin-bottom: 0.75rem;
+  opacity: 0.8;
+  font-weight: 500;
+`;
+
+const RetryButton = styled.button`
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 0.5rem 1rem;
+  color: #2d3748;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+  
+  &:active {
+    transform: translateY(1px);
+  }
+`;
+
 function App() {
   // API URL from environment variables
   const API_URL = ((window as any).ENV?.REACT_APP_BACKEND_URL || process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000') + '/api';
@@ -199,6 +236,7 @@ function App() {
   const [loading, setLoading] = useState<boolean>(false);
   const [loadingMore, setLoadingMore] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [loadMoreError, setLoadMoreError] = useState<string | null>(null); // Отдельная ошибка для подзагрузки
   const [page, setPage] = useState<number>(1);
   const [hasMore, setHasMore] = useState<boolean>(false);
 
@@ -254,7 +292,8 @@ function App() {
   // Infinite scroll handler с оптимизированными зависимостями
   useEffect(() => {
     const handleScroll = () => {
-      if (loadingMore || !hasMore || query.length < 3) return;
+      // Блокируем подзагрузку если есть ошибка подзагрузки, идет загрузка, нет больше данных или запрос слишком короткий
+      if (loadingMore || !hasMore || query.length < 3 || loadMoreError) return;
       
       const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
       const windowHeight = window.innerHeight;
@@ -268,7 +307,7 @@ function App() {
 
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [loadingMore, hasMore, query.length]); // Убираем page и type из зависимостей
+  }, [loadingMore, hasMore, query.length, loadMoreError]); // Добавляем loadMoreError в зависимости
 
   // Function to load next page с улучшенным управлением состоянием
   const loadNextPage = () => {
@@ -280,6 +319,7 @@ function App() {
     }
     
     setLoadingMore(true);
+    setLoadMoreError(null); // Сбрасываем ошибку подзагрузки
     const nextPage = page + 1;
     
     loadMoreControllerRef.current = new AbortController();
@@ -304,16 +344,16 @@ function App() {
           setResults(prevResults => [...prevResults, ...data.items]);
           setPage(nextPage);
           setHasMore(data.has_more);
-          setError(null);
+          setLoadMoreError(null); // Сбрасываем ошибку при успешной загрузке
         }
       })
       .catch(err => {
         if (err.name === 'AbortError') {
           return;
         }
-        // Только устанавливаем ошибку если запрос еще актуален
+        // Устанавливаем ошибку подзагрузки если запрос еще актуален
         if (query === latestQuery.current && type === latestType.current) {
-          setError(err.message || 'Failed to load more results.');
+          setLoadMoreError(err.message || 'Не удалось загрузить дополнительные результаты');
         }
       })
       .finally(() => {
@@ -391,6 +431,7 @@ function App() {
     setQuery(newQuery);
     latestQuery.current = newQuery;
     setError(null);
+    setLoadMoreError(null); // Сбрасываем ошибку подзагрузки
     setPage(1);
     setHasMore(false);
     if (newQuery.length < 3) {
@@ -407,6 +448,7 @@ function App() {
       }
       setLoading(false);
       setLoadingMore(false);
+      setLoadMoreError(null);
       setResults([]);
       return;
     }
@@ -416,6 +458,7 @@ function App() {
       loadMoreControllerRef.current = null;
     }
     setLoadingMore(false);
+    setLoadMoreError(null);
     // Trigger debounced search for valid query length
     searchDebounced(newQuery, type);
   };
@@ -424,6 +467,7 @@ function App() {
     setType(newType);
     latestType.current = newType;
     setError(null);
+    setLoadMoreError(null); // Сбрасываем ошибку подзагрузки
     setPage(1);
     setHasMore(false);
     // Clear results when switching type with short query
@@ -444,6 +488,7 @@ function App() {
       loadMoreControllerRef.current = null;
     }
     setLoadingMore(false);
+    setLoadMoreError(null);
     // Perform immediate search with new type
     controllerRef.current = new AbortController();
     setLoading(true);
@@ -492,7 +537,7 @@ function App() {
         <GlobalStyle />
         <Container>
           <Header>
-            <Title>GitHub Search</Title>
+            <Title>Repodar</Title>
             <Subtitle>Найдите пользователей и репозитории GitHub</Subtitle>
           </Header>
           
@@ -539,6 +584,18 @@ function App() {
                 Загрузка дополнительных результатов...
               </LoadMoreText>
             </LoadMoreCard>
+          )}
+          
+          {loadMoreError && !loadingMore && (
+            <LoadMoreErrorCard>
+              <LoadMoreErrorText>Ошибка: {loadMoreError}</LoadMoreErrorText>
+              <LoadMoreBlockedText>
+                Автоматическая подзагрузка приостановлена
+              </LoadMoreBlockedText>
+              <RetryButton onClick={loadNextPage}>
+                Повторить попытку
+              </RetryButton>
+            </LoadMoreErrorCard>
           )}
         </Container>
       </ContentWrapper>
