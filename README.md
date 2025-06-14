@@ -106,6 +106,9 @@ make up
 # Остановка всех сервисов
 make down
 
+# Запсук тестов
+make test
+
 # Просмотр логов
 docker-compose logs -f
 

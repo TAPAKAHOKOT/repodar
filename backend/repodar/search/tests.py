@@ -17,7 +17,7 @@ class SearchAPITest(APITestCase):
             "total_count": 100,
             "has_more": True
         }
-        with patch('repodar.search.utils.search_github', return_value=dummy_results) as mock_search:
+        with patch('repodar.search.views.search_github', return_value=dummy_results) as mock_search:
             # First call - should call search_github and return results
             response = self.client.post('/api/search', {"query": "testquery", "type": "user"}, format='json')
             self.assertEqual(response.status_code, 200)
@@ -44,7 +44,7 @@ class SearchAPITest(APITestCase):
             "total_count": 100,
             "has_more": True
         }
-        with patch('repodar.search.utils.search_github', side_effect=[dummy_results_page1, dummy_results_page2]) as mock_search:
+        with patch('repodar.search.views.search_github', side_effect=[dummy_results_page1, dummy_results_page2]) as mock_search:
             # First page
             response1 = self.client.post('/api/search', {"query": "test", "type": "user", "page": 1}, format='json')
             self.assertEqual(response1.status_code, 200)
@@ -66,7 +66,7 @@ class SearchAPITest(APITestCase):
             "total_count": 50,
             "has_more": True
         }
-        with patch('repodar.search.utils.search_github', return_value=dummy_results) as mock_search:
+        with patch('repodar.search.views.search_github', return_value=dummy_results) as mock_search:
             # Initial search to populate cache
             response1 = self.client.post('/api/search', {"query": "abc", "type": "user"}, format='json')
             self.assertEqual(response1.status_code, 200)
@@ -80,7 +80,7 @@ class SearchAPITest(APITestCase):
             self.assertEqual(mock_search.call_count, 2)
 
     def test_query_too_short(self):
-        with patch('repodar.search.utils.search_github') as mock_search:
+        with patch('repodar.search.views.search_github') as mock_search:
             response = self.client.post('/api/search', {"query": "ab", "type": "user"}, format='json')
             # Expect a 400 Bad Request for too short query
             self.assertEqual(response.status_code, 400)
