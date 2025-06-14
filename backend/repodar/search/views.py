@@ -7,7 +7,7 @@ from .utils import search_github
 from drf_yasg.utils import swagger_auto_schema
 
 class SearchView(APIView):
-    """Search GitHub users or repositories (with caching and pagination)."""
+    """Поиск пользователей или репозиториев GitHub (с кэшированием и пагинацией)."""
     @swagger_auto_schema(request_body=SearchRequestSerializer, responses={200: 'Success'})
     def post(self, request):
         serializer = SearchRequestSerializer(data=request.data)
@@ -22,22 +22,22 @@ class SearchView(APIView):
         cache_key = f"search:{search_type}:{query}:page:{page}"
         cached = cache.get(cache_key)
         if cached is not None:
-            # Return cached results
+            # Возвращаем кэшированные результаты
             return Response(cached, status=status.HTTP_200_OK)
         
-        # Not in cache, perform GitHub API search
+        # Не в кеше, выполняем поиск через GitHub API
         try:
             results = search_github(query, search_type, page=page)
         except Exception as e:
-            # Return error message from GitHub or networking
+            # Возвращаем сообщение об ошибке от GitHub или сети
             return Response({"error": str(e)}, status=status.HTTP_502_BAD_GATEWAY)
         
-        # Cache the results for 2 hours
+        # Кешируем результаты на 2 часа
         cache.set(cache_key, results, timeout=7200)
         return Response(results, status=status.HTTP_200_OK)
 
 class ClearCacheView(APIView):
-    """Clear the search results cache."""
+    """Очистка кеша поиска."""
     @swagger_auto_schema(request_body=None, responses={200: 'Cache cleared'})
     def post(self, request):
         cache.clear()

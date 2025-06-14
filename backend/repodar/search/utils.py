@@ -1,11 +1,11 @@
 import os
 import requests
 
-# Optional GitHub personal access token to increase rate limits.
-GITHUB_TOKEN = os.getenv('GITHUB_TOKEN', None)
-
 def search_github(query, search_type, page=1, per_page=30):
     """Call GitHub Search API for users or repositories with pagination support."""
+    # Опциональный GitHub personal access token для увеличения лимитов запросов.
+    GITHUB_TOKEN = os.getenv('§', None)
+
     if search_type not in ['user', 'repo']:
         raise ValueError("Invalid search type. Must be 'user' or 'repo'.")
     
@@ -31,11 +31,11 @@ def search_github(query, search_type, page=1, per_page=30):
     try:
         resp = requests.get(url, params=params, headers=headers, timeout=10)
     except requests.RequestException as e:
-        # Network-level or connection error
+        # Network-level или connection error
         raise RuntimeError(f"Failed to connect to GitHub API: {e}")
     
     if resp.status_code != 200:
-        # If the response is not OK, attempt to extract error message
+        # Если ответ не OK, пытаемся извлечь сообщение об ошибке
         try:
             error_msg = resp.json().get('message', '')
         except ValueError:
@@ -46,7 +46,7 @@ def search_github(query, search_type, page=1, per_page=30):
     items = data.get('items', [])
     total_count = data.get('total_count', 0)
     
-    # If searching for users, fetch each user's detail to get location
+    # Если ищем пользователей, получаем детали каждого пользователя для получения местоположения
     if search_type == 'user':
         for item in items:
             username = item.get('login')
