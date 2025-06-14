@@ -13,11 +13,11 @@ const Grid = styled.div`
   gap: 1.5rem;
   width: 100%;
   
-  @media (min-width: 768px) {
+  @media (min-width: 640px) {
     grid-template-columns: repeat(2, 1fr);
   }
   
-  @media (min-width: 1200px) {
+  @media (min-width: 768px) {
     grid-template-columns: repeat(3, 1fr);
   }
 `;
